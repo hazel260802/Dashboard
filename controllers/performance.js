@@ -1,5 +1,6 @@
 const connection = require("../database");
 const Performance = require("../models/performance");
+const { runInterval } = require("../utils/schedule");
 
 const updatePerformance = async () => {
   try {
@@ -19,7 +20,7 @@ const updatePerformance = async () => {
       .slice(0, 19)
       .replace("T", " ");
 
-    const query = `SELECT DATE_FORMAT(bookDate, '%Y-%m-%d') AS date, SUM(total) AS sales, COUNT(*) AS booking, COUNT(DISTINCT customerId) AS customers FROM booking WHERE status = 'booked' AND bookDate >= '${formattedStartDate}' AND bookDate <= '${formattedEndDate}' GROUP BY date`;
+    const query = `SELECT DATE_FORMAT(bookDate, '%Y-%m-%d') AS date, SUM(Total) AS sales, COUNT(*) AS booking, COUNT(DISTINCT CustomerId) AS customers FROM Booking WHERE status = 'Booked' AND BookDate >= '${formattedStartDate}' AND BookDate <= '${formattedEndDate}' GROUP BY date`;
 
     connection.query(query, async (error, results) => {
       if (error) throw error;

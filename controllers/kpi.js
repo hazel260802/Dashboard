@@ -1,10 +1,11 @@
 // controllers/kpi.js
 const connection = require("../database");
 const Kpi = require("../models/kpi");
+const { runInterval } = require("../utils/schedule");
 
 const updateKpi = async () => {
     try {
-      const query = `SELECT COUNT(*) as total FROM booking WHERE status = 'booked'`;
+      const query = `SELECT COUNT(*) as total FROM Booking WHERE status = 'Booked'`;
   
       connection.query(query, async (error, results) => {
         if (error) throw error;
@@ -51,6 +52,6 @@ const updateKpi = async () => {
       return "decrease";
     }
   };
-setInterval(updateKpi, process.env.KPI_INTERVAL);
-  
+runInterval(updateKpi, process.env.KPI_INTERVAL);
+
 module.exports = { updateKpi };
