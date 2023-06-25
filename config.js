@@ -1,18 +1,18 @@
 // config.js
 const config = {
     db: {
-      host: process.env.DB_HOST,
-      user: process.env.DB_USER,
-      password: process.env.DB_PASSWORD,
-      port: process.env.DB_PORT,
-      database: process.env.DB_DATABASE,
+      host: '103.173.254.82',
+      user: 'dbhuan',
+      password: '0866444202',
+      port: '3306',
+      database: 'doandb',
       pool: {
         min: 1, 
         max: 100, 
         idleTimeoutMillis: 30000
         },
     },
-    ratingInterval: parseInt(process.env.RATING_INTERVAL),
+    ratingInterval: parseInt(60000),
   };
 
 module.exports = config;

@@ -14,7 +14,7 @@ const updateRatings = async () => {
             .replace("T", " ");
 
         // Query to retrieve newly added comments and their ratings
-        const query = `select hotel_id, rate, count(*) from comments where created_at > '${formattedTimestamp}' group by hotel_id, rate`;
+        const query = `SELECT hotel_id, rate, count(*) FROM comments WHERE created_at > '${formattedTimestamp}' GROUP BY hotel_id, rate`;
 
         connection.query(query, async (error, results) => {
             if (error) throw error;

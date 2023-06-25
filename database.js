@@ -1,5 +1,6 @@
 const mysql = require("mysql");
 const mongoose = require("mongoose");
+
 require("dotenv").config();
 
 module.exports = mySQLConnect();
@@ -28,7 +29,11 @@ async function mongoDBConnect() {
     try {
         mongoose.connect(
             process.env.MONGO_URI,
-            { useNewUrlParser: true, useUnifiedTopology: true },
+            { 
+                useNewUrlParser: true, 
+                useUnifiedTopology: true,
+                bufferTimeoutMS: 30000, 
+            },
             () => {
                 console.log("MongoDB connected success");
             }

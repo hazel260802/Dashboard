@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-mongoose.set('strictQuery', false);
 
 const RatingSchema = new mongoose.Schema({
     hotelId: {
@@ -20,9 +19,6 @@ const RatingSchema = new mongoose.Schema({
     terrible: {
         type: Number,
     },
-    // negativeWords: {
-    //     type: Object,
-    // },
 });
 
 module.exports = mongoose.model("Rating", RatingSchema);

@@ -20,7 +20,14 @@ const updatePerformance = async () => {
       .slice(0, 19)
       .replace("T", " ");
 
-    const query = `SELECT DATE_FORMAT(bookDate, '%Y-%m-%d') AS date, SUM(Total) AS sales, COUNT(*) AS booking, COUNT(DISTINCT CustomerId) AS customers FROM Booking WHERE status = 'Booked' AND BookDate >= '${formattedStartDate}' AND BookDate <= '${formattedEndDate}' GROUP BY date`;
+    const query = `SELECT DATE_FORMAT(book_date, '%Y-%m-%d') 
+                  AS date, SUM(total) AS sales, 
+                  COUNT(*) AS bookings, 
+                  COUNT(DISTINCT customer_id) AS customers 
+                  FROM bookings 
+                  WHERE status = 'completed' AND book_date >= '${formattedStartDate}' 
+                  AND book_date <= '${formattedEndDate}' 
+                  GROUP BY date`;
 
     connection.query(query, async (error, results) => {
       if (error) throw error;
