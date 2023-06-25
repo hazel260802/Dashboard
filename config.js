@@ -10,7 +10,7 @@ const config = {
         min: 1, 
         max: 100, 
         idleTimeoutMillis: 30000
-        },
+      },
     },
     ratingInterval: parseInt(60000),
   };

@@ -23,11 +23,17 @@ const updateKpi = async () => {
             deltaType: getDeltaType(totalBookings),
           });
   
-          await kpi.save();
+          try {
+            await kpi.save();
+            console.log("KPI saved successfully");
+          } catch (error) {
+            console.log("Error saving KPI:", error);
+          }
         }
       });
     } catch (error) {
       console.log("Error:", error);
+      throw error; // Re-throw the error to propagate it further if needed
     }
   };
   
@@ -52,6 +58,13 @@ const updateKpi = async () => {
       return "decrease";
     }
   };
-runInterval(updateKpi, process.env.KPI_INTERVAL);
+const runUpdateKpi = async () => {
+  try {
+    await updateKpi();
+  } catch (error) {
+    console.log("Error updating KPI:", error);
+  }
+};
+runInterval(runUpdateKpi, process.env.KPI_INTERVAL);
 
 module.exports = { updateKpi };

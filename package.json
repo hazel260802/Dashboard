@@ -6,15 +6,17 @@
     "start": "node ./bin/www"
   },
   "dependencies": {
+    "aws-crt": "^1.15.18",
     "cookie-parser": "~1.4.4",
     "debug": "~2.6.9",
     "dotenv": "^16.1.4",
     "express": "^4.18.2",
     "http-errors": "~1.6.3",
     "jade": "^0.29.0",
-    "mongoose": "^6.10.0",
+    "mongoose": "^7.0.0",
     "morgan": "~1.9.1",
     "mysql": "^2.18.1",
-    "mysql2": "^3.3.4"
+    "mysql2": "^3.3.4",
+    "node": "^14.17.3"
   }
 }
