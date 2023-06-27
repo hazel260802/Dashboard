@@ -66,6 +66,32 @@ const updatePerformance = async () => {
   }
 };
 
+const getAllPerformances = async (req, res) => {
+  try {
+    const performances = await Performance.find();
+    res.json(performances);
+  } catch (error) {
+    console.log("Error retrieving performances:", error);
+    res.status(500).json({ error: "Failed to retrieve performances" });
+  }
+};
+
+const getLatestPerformance = async (req, res) => {
+  try {
+    const latestPerformance = await Performance.findOne()
+      .sort({ date: -1 })
+      .limit(1);
+    res.json(latestPerformance);
+  } catch (error) {
+    console.log("Error retrieving latest performance:", error);
+    res.status(500).json({ error: "Failed to retrieve latest performance" });
+  }
+};
+
 runInterval(updatePerformance, process.env.PERFORMANCE_INTERVAL);
 
-module.exports = { updatePerformance };
+module.exports = {
+  updatePerformance,
+  getAllPerformances,
+  getLatestPerformance,
+};

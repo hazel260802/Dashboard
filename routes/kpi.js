@@ -1,8 +1,12 @@
-const express = require('express');
+// routes/kpi.js
+const express = require("express");
 const router = express.Router();
-const kpiController = require('../controllers/kpi');
+const kpiController = require("../controllers/kpi");
 
-// Kpi Route
-router.get('/kpi', kpiController.updateKpi);
+// Define the getKpis route
+router.get("/", kpiController.getKpis);
+
+// Define the getLatestKpi route
+router.get("/latest", kpiController.getLatestKpi);
 
 module.exports = router;
