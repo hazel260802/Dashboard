@@ -18,12 +18,12 @@ const routes = require('./routes');
 app.use('/', routes);
 
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function(next) {
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function(err, res) {
   res.status(err.status || 500).json({
     error: {
       message: err.message,

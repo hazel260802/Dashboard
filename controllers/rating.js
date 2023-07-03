@@ -1,9 +1,32 @@
 // controllers/rating.js
-const connection = require("../database");
+const { connection, saved_connection } = require("../database");
 const { runInterval } = require("../utils/schedule");
+
+const createRatingsTable = () => {
+  const createTableQuery = `
+  CREATE TABLE IF NOT EXISTS ratings (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    hotel_id BIGINT UNSIGNED NOT NULL,
+    wonderful INT NOT NULL DEFAULT 0,
+    good INT NOT NULL DEFAULT 0,
+    average INT NOT NULL DEFAULT 0,
+    poor INT NOT NULL DEFAULT 0,
+    terrible INT NOT NULL DEFAULT 0
+  )
+`;
+  saved_connection.query(createTableQuery, (error) => {
+    if (error) {
+      console.log("Error creating ratings table:", error);
+      throw error;
+    }
+    console.log("Ratings table created or already exists");
+  });
+};
 
 const updateRatings = async () => {
   try {
+    createRatingsTable(); // Ensure the ratings table exists
+
     const oneMinuteAgo = new Date(Date.now() - 60000);
 
     // Format the timestamp for the MySQL query
@@ -30,11 +53,13 @@ const updateRatings = async () => {
           SELECT * FROM ratings WHERE hotel_id = ${hotel_id}
         `;
 
-        connection.query(existingRatingsQuery, async (error, existingRatings) => {
-          if (error) throw error;
+        saved_connection.query(
+          existingRatingsQuery,
+          async (error, existingRatings) => {
+            if (error) throw error;
 
-          if (existingRatings.length > 0) {
-            const updateQuery = `
+            if (existingRatings.length > 0) {
+              const updateQuery = `
               UPDATE ratings
               SET wonderful = CASE
                 WHEN ${rate} >= 4.5 THEN wonderful + ${count}
@@ -59,20 +84,25 @@ const updateRatings = async () => {
               WHERE hotel_id = ${hotel_id}
             `;
 
-            connection.query(updateQuery, async (error) => {
-              if (error) throw error;
-            });
-          } else {
-            const insertQuery = `
+              saved_connection.query(updateQuery, async (error) => {
+                if (error) throw error;
+              });
+            } else {
+              const insertQuery = `
               INSERT INTO ratings (hotel_id, wonderful, good, average, poor, terrible)
-              VALUES (${hotel_id}, ${rate >= 4.5 ? count : 0}, ${rate >= 3.5 && rate < 4.5 ? count : 0}, ${rate >= 2.5 && rate < 3.5 ? count : 0}, ${rate >= 1.5 && rate < 2.5 ? count : 0}, ${rate < 1.5 ? count : 0})
+              VALUES (${hotel_id}, ${rate >= 4.5 ? count : 0}, ${
+                rate >= 3.5 && rate < 4.5 ? count : 0
+              }, ${rate >= 2.5 && rate < 3.5 ? count : 0}, ${
+                rate >= 1.5 && rate < 2.5 ? count : 0
+              }, ${rate < 1.5 ? count : 0})
             `;
 
-            connection.query(insertQuery, async (error) => {
-              if (error) throw error;
-            });
+              saved_connection.query(insertQuery, async (error) => {
+                if (error) throw error;
+              });
+            }
           }
-        });
+        );
       }
     });
   } catch (error) {
@@ -80,7 +110,24 @@ const updateRatings = async () => {
   }
 };
 
-// Rest of the code remains the same
+const getAllRatings = async (req, res) => {
+  try {
+    const query = "SELECT * FROM ratings";
+    saved_connection.query(query, (error, results) => {
+      if (error) {
+        console.log("Error retrieving ratings:", error);
+        res.status(500).json({ error: "Failed to retrieve ratings" });
+      } else {
+        res.json(results);
+      }
+    });
+  } catch (error) {
+    console.log("Error retrieving ratings:", error);
+    res.status(500).json({ error: "Failed to retrieve ratings" });
+  }
+};
+
+runInterval(updateRatings, process.env.RATING_INTERVAL);
 
 module.exports = {
   updateRatings,

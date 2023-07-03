@@ -1,10 +1,32 @@
 // controllers/kpi.js
-const connection = require("../database");
-const Kpi = require("../models/kpi");
+const { connection, saved_connection } = require("../database");
 const { runInterval } = require("../utils/schedule");
+
+const createKpisTable = () => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS kpis (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      title VARCHAR(255) NOT NULL,
+      metric INT NOT NULL,
+      progress INT NOT NULL,
+      delta FLOAT NOT NULL,
+      deltaType VARCHAR(255) NOT NULL
+    )
+  `;
+  saved_connection.query(createTableQuery, (error) => {
+    if (error) {
+      console.log("Error creating kpis table:", error);
+      throw error;
+    } else {
+      console.log("kpis table created or already exists");
+    }
+  });
+};
 
 const updateKpi = async () => {
   try {
+    createKpisTable(); // Ensure the kpis table exists
+
     const query = `SELECT COUNT(*) as total FROM bookings WHERE status = 'completed'`;
 
     connection.query(query, async (error, results) => {
@@ -20,7 +42,7 @@ const updateKpi = async () => {
         const insertQuery = `INSERT INTO kpis (title, metric, progress, delta, deltaType)
                             VALUES ('Booking', ${totalBookings}, ${totalBookings}, ${delta}, '${deltaType}')`;
 
-        connection.query(insertQuery, async (error, results) => {
+        saved_connection.query(insertQuery, async (error) => {
           if (error) throw error;
           console.log("KPI saved successfully");
         });
@@ -53,6 +75,7 @@ const getDeltaType = (totalBookings) => {
     return "decrease";
   }
 };
+
 const runUpdateKpi = async () => {
   try {
     await updateKpi();
@@ -60,12 +83,15 @@ const runUpdateKpi = async () => {
     console.log("Error updating KPI:", error);
   }
 };
+
 runInterval(runUpdateKpi, process.env.KPI_INTERVAL);
 
-const getKpis = async (req, res) => {
+const getKpis = async (res) => {
   try {
+    createKpisTable(); // Ensure the kpis table exists
+
     const query = "SELECT * FROM kpis";
-    connection.query(query, (error, results) => {
+    saved_connection.query(query, (error, results) => {
       if (error) {
         console.log("Error retrieving KPIs:", error);
         res.status(500).json({ error: "Failed to retrieve KPIs" });
@@ -81,8 +107,10 @@ const getKpis = async (req, res) => {
 
 const getLatestKpi = async (req, res) => {
   try {
+    createKpisTable(); // Ensure the kpis table exists
+
     const query = "SELECT * FROM kpis ORDER BY id DESC LIMIT 1";
-    connection.query(query, (error, result) => {
+    saved_connection.query(query, (error, result) => {
       if (error) {
         console.log("Error retrieving latest KPI:", error);
         res.status(500).json({ error: "Failed to retrieve latest KPI" });

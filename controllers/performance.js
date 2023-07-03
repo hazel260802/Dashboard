@@ -1,9 +1,30 @@
 // controllers/performance.js
-const connection = require("../database");
+const { connection, saved_connection } = require("../database");
 const { runInterval } = require("../utils/schedule");
+
+const createPerformancesTable = () => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS performances (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      date DATE NOT NULL,
+      sales DECIMAL(10, 2) NOT NULL,
+      bookings INT NOT NULL,
+      customers INT NOT NULL
+    )
+  `;
+  saved_connection.query(createTableQuery, (error) => {
+    if (error) {
+      console.log("Error creating performances table:", error);
+      throw error;
+    }
+    console.log("Performances table created or already exists");
+  });
+};
 
 const updatePerformance = async () => {
   try {
+    createPerformancesTable(); // Ensure the performances table exists
+
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1; // Get current month (1-12)
     const currentYear = currentDate.getFullYear(); // Get current year
@@ -45,7 +66,7 @@ const updatePerformance = async () => {
           SELECT * FROM performances WHERE date = '${date}'
         `;
 
-        connection.query(existingPerformanceQuery, async (error, existingPerformance) => {
+        saved_connection.query(existingPerformanceQuery, async (error, existingPerformance) => {
           if (error) throw error;
 
           if (existingPerformance.length > 0) {
@@ -55,7 +76,7 @@ const updatePerformance = async () => {
               WHERE date = '${date}'
             `;
 
-            connection.query(updateQuery, async (error) => {
+            saved_connection.query(updateQuery, async (error) => {
               if (error) throw error;
             });
           } else {
@@ -64,7 +85,7 @@ const updatePerformance = async () => {
               VALUES ('${date}', ${sales}, ${bookings}, ${customers})
             `;
 
-            connection.query(insertQuery, async (error) => {
+            saved_connection.query(insertQuery, async (error) => {
               if (error) throw error;
             });
           }
@@ -76,7 +97,45 @@ const updatePerformance = async () => {
   }
 };
 
-// Rest of the code remains the same
+const getAllPerformances = async (req, res) => {
+  try {
+    createPerformancesTable(); // Ensure the performances table exists
+
+    const query = "SELECT * FROM performances";
+    saved_connection.query(query, (error, results) => {
+      if (error) {
+        console.log("Error retrieving performances:", error);
+        res.status(500).json({ error: "Failed to retrieve performances" });
+      } else {
+        res.json(results);
+      }
+    });
+  } catch (error) {
+    console.log("Error retrieving performances:", error);
+    res.status(500).json({ error: "Failed to retrieve performances" });
+  }
+};
+
+const getLatestPerformance = async (req, res) => {
+  try {
+    createPerformancesTable(); // Ensure the performances table exists
+
+    const query = "SELECT * FROM performances ORDER BY date DESC LIMIT 1";
+    saved_connection.query(query, (error, results) => {
+      if (error) {
+        console.log("Error retrieving latest performance:", error);
+        res.status(500).json({ error: "Failed to retrieve latest performance" });
+      } else {
+        res.json(results[0]);
+      }
+    });
+  } catch (error) {
+    console.log("Error retrieving latest performance:", error);
+    res.status(500).json({ error: "Failed to retrieve latest performance" });
+  }
+};
+
+runInterval(updatePerformance, process.env.PERFORMANCE_INTERVAL);
 
 module.exports = {
   updatePerformance,
