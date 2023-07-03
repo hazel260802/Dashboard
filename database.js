@@ -1,10 +1,8 @@
 const mysql = require("mysql");
-const mongoose = require("mongoose");
 
 require("dotenv").config();
 
 module.exports = mySQLConnect();
-mongoDBConnect();
 
 function mySQLConnect() {
   try {
@@ -15,32 +13,14 @@ function mySQLConnect() {
       database: process.env.DB_DATABASE,
       port: process.env.DB_PORT,
     });
+
     connection.connect((err) => {
       if (err) console.log(err);
-      else console.log("MySQL connected success");
+      else console.log("MySQL connected successfully");
     });
+
     return connection;
   } catch (error) {
     console.log(error);
-  }
-}
-
-async function mongoDBConnect() {
-  try {
-    mongoose.set("strictQuery", false);
-    mongoose
-      .connect(process.env.MONGO_URI, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-      })
-      .then(() => {
-        console.log("MongoDB connected success");
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  } catch (error) {
-    console.log(error);
-    process.exit();
   }
 }

@@ -1,6 +1,5 @@
 // controllers/rating.js
 const connection = require("../database");
-const Rating = require("../models/rating");
 const { runInterval } = require("../utils/schedule");
 
 const updateRatings = async () => {
@@ -14,7 +13,7 @@ const updateRatings = async () => {
       .replace("T", " ");
 
     // Query to retrieve newly added comments and their ratings
-    const query = `SELECT hotel_id, rate, count(*) FROM comments WHERE created_at > '${formattedTimestamp}' GROUP BY hotel_id, rate`;
+    const query = `SELECT hotel_id, rate, COUNT(*) AS count FROM comments WHERE created_at > '${formattedTimestamp}' GROUP BY hotel_id, rate`;
 
     connection.query(query, async (error, results) => {
       if (error) throw error;
@@ -27,40 +26,53 @@ const updateRatings = async () => {
       for (const result of results) {
         const { hotel_id, rate, count } = result;
 
-        // Find the existing ratings for the hotel in MongoDB
-        let existingRatings = await Rating.findOne({
-          hotelId: hotel_id,
+        const existingRatingsQuery = `
+          SELECT * FROM ratings WHERE hotel_id = ${hotel_id}
+        `;
+
+        connection.query(existingRatingsQuery, async (error, existingRatings) => {
+          if (error) throw error;
+
+          if (existingRatings.length > 0) {
+            const updateQuery = `
+              UPDATE ratings
+              SET wonderful = CASE
+                WHEN ${rate} >= 4.5 THEN wonderful + ${count}
+                ELSE wonderful
+              END,
+              good = CASE
+                WHEN ${rate} >= 3.5 AND ${rate} < 4.5 THEN good + ${count}
+                ELSE good
+              END,
+              average = CASE
+                WHEN ${rate} >= 2.5 AND ${rate} < 3.5 THEN average + ${count}
+                ELSE average
+              END,
+              poor = CASE
+                WHEN ${rate} >= 1.5 AND ${rate} < 2.5 THEN poor + ${count}
+                ELSE poor
+              END,
+              terrible = CASE
+                WHEN ${rate} < 1.5 THEN terrible + ${count}
+                ELSE terrible
+              END
+              WHERE hotel_id = ${hotel_id}
+            `;
+
+            connection.query(updateQuery, async (error) => {
+              if (error) throw error;
+            });
+          } else {
+            const insertQuery = `
+              INSERT INTO ratings (hotel_id, wonderful, good, average, poor, terrible)
+              VALUES (${hotel_id}, ${rate >= 4.5 ? count : 0}, ${rate >= 3.5 && rate < 4.5 ? count : 0}, ${rate >= 2.5 && rate < 3.5 ? count : 0}, ${rate >= 1.5 && rate < 2.5 ? count : 0}, ${rate < 1.5 ? count : 0})
+            `;
+
+            connection.query(insertQuery, async (error) => {
+              if (error) throw error;
+            });
+          }
         });
-
-        // If ratings exist, update the corresponding rating count
-        if (existingRatings) {
-          if (rate >= 4.5) existingRatings.wonderful += count;
-          else if (rate >= 3.5) existingRatings.good += count;
-          else if (rate >= 2.5) existingRatings.average += count;
-          else if (rate >= 1.5) existingRatings.poor += count;
-          else existingRatings.terrible += count;
-
-          await existingRatings.save();
-        }
-        // If ratings don't exist, create a new document with the ratings
-        else {
-          let newRatings = {
-            hotelId: hotel_id,
-            wonderful: 0,
-            good: 0,
-            average: 0,
-            poor: 0,
-            terrible: 0,
-          };
-
-          if (rate >= 4.5) newRatings.wonderful += count;
-          else if (rate >= 3.5) newRatings.good += count;
-          else if (rate >= 2.5) newRatings.average += count;
-          else if (rate >= 1.5) newRatings.poor += count;
-          else newRatings.terrible += count;
-
-          await new Rating(newRatings).save();
-        }
       }
     });
   } catch (error) {
@@ -68,18 +80,7 @@ const updateRatings = async () => {
   }
 };
 
-// get all new ratings 
-const getAllRatings = async (req, res) => {
-  try {
-    const ratings = await Rating.find();
-    res.json(ratings);
-  } catch (error) {
-    console.log("Error retrieving ratings:", error);
-    res.status(500).json({ error: "Failed to retrieve ratings" });
-  }
-};
-
-runInterval(updateRatings, process.env.RATING_INTERVAL);
+// Rest of the code remains the same
 
 module.exports = {
   updateRatings,

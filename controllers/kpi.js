@@ -14,21 +14,16 @@ const updateKpi = async () => {
       } else {
         console.log("New bookings:", results[0].total);
         const totalBookings = results[0].total;
+        const delta = calculateDelta(totalBookings);
+        const deltaType = getDeltaType(totalBookings);
 
-        const kpi = new Kpi({
-          title: "Booking",
-          metric: totalBookings,
-          progress: totalBookings,
-          delta: calculateDelta(totalBookings),
-          deltaType: getDeltaType(totalBookings),
-        });
+        const insertQuery = `INSERT INTO kpis (title, metric, progress, delta, deltaType)
+                            VALUES ('Booking', ${totalBookings}, ${totalBookings}, ${delta}, '${deltaType}')`;
 
-        try {
-          await kpi.save();
+        connection.query(insertQuery, async (error, results) => {
+          if (error) throw error;
           console.log("KPI saved successfully");
-        } catch (error) {
-          console.log("Error saving KPI:", error);
-        }
+        });
       }
     });
   } catch (error) {
@@ -69,8 +64,15 @@ runInterval(runUpdateKpi, process.env.KPI_INTERVAL);
 
 const getKpis = async (req, res) => {
   try {
-    const kpis = await Kpi.find();
-    res.json(kpis);
+    const query = "SELECT * FROM kpis";
+    connection.query(query, (error, results) => {
+      if (error) {
+        console.log("Error retrieving KPIs:", error);
+        res.status(500).json({ error: "Failed to retrieve KPIs" });
+      } else {
+        res.json(results);
+      }
+    });
   } catch (error) {
     console.log("Error retrieving KPIs:", error);
     res.status(500).json({ error: "Failed to retrieve KPIs" });
@@ -79,8 +81,15 @@ const getKpis = async (req, res) => {
 
 const getLatestKpi = async (req, res) => {
   try {
-    const latestKpi = await Kpi.findOne().sort({ _id: -1 }).limit(1);
-    res.json(latestKpi);
+    const query = "SELECT * FROM kpis ORDER BY id DESC LIMIT 1";
+    connection.query(query, (error, result) => {
+      if (error) {
+        console.log("Error retrieving latest KPI:", error);
+        res.status(500).json({ error: "Failed to retrieve latest KPI" });
+      } else {
+        res.json(result[0]);
+      }
+    });
   } catch (error) {
     console.log("Error retrieving latest KPI:", error);
     res.status(500).json({ error: "Failed to retrieve latest KPI" });
