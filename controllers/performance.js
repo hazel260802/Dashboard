@@ -56,7 +56,7 @@ const updatePerformance = async () => {
       if (results.length === 0) {
         console.log("No performance data");
       } else {
-        console.log("Performance data:", results.length);
+        console.log("Performance data:", results.length, " at (timestamp):", new Date());
       }
 
       for (const result of results) {

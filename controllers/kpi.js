@@ -18,7 +18,7 @@ const createKpisTable = () => {
       console.log("Error creating kpis table:", error);
       throw error;
     } else {
-      console.log("kpis table created or already exists");
+      console.log("Kpis table created or already exists");
     }
   });
 };
@@ -34,7 +34,7 @@ const updateKpi = async () => {
       if (results.length === 0) {
         console.log("No new bookings");
       } else {
-        console.log("New bookings:", results[0].total);
+        console.log("New bookings:", results[0].total, " at (timestamp):", new Date());
         const totalBookings = results[0].total;
         const delta = calculateDelta(totalBookings);
         const deltaType = getDeltaType(totalBookings);

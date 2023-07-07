@@ -27,10 +27,10 @@ const updateRatings = async () => {
   try {
     createRatingsTable(); // Ensure the ratings table exists
 
-    const oneMinuteAgo = new Date(Date.now() - 60000);
+    const oneDayAgo = new Date(Date.now() - process.env.RATING_INTERVAL);
 
     // Format the timestamp for the MySQL query
-    const formattedTimestamp = oneMinuteAgo
+    const formattedTimestamp = oneDayAgo
       .toISOString()
       .slice(0, 19)
       .replace("T", " ");
@@ -43,7 +43,8 @@ const updateRatings = async () => {
       if (results.length == 0) {
         console.log("No new rating");
       } else {
-        console.log("New ratings: ", results.length);
+        // Log the current timestamp of new ratings
+        console.log("New ratings: ", results.length, " at (timestamp):", new Date());
       }
 
       for (const result of results) {
