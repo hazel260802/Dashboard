@@ -17,19 +17,24 @@ const routes = require('./routes');
 // Mount the routes
 app.use('/', routes);
 
+app.get('/', (req, res) => {
+  res.send('Hello World!')
+})
+
 // catch 404 and forward to error handler
-app.use(function(req, res, next) {
+app.use(function(req, res, next) { // Add the `next` function as an argument
   next(createError(404));
 });
 
 // error handler
-app.use(function(err, req, res, next) {
+app.use(function(err, req, res, next) { // Add the `next` function as an argument
   res.status(err.status || 500).json({
     error: {
       message: err.message,
     },
   });
 });
+
 
 app.listen(process.env.API_SERVER, () => {
   console.log(`Server is running on port: ${process.env.API_SERVER}`);

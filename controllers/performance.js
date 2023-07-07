@@ -1,9 +1,30 @@
-const connection = require("../database");
-const Performance = require("../models/performance");
+// controllers/performance.js
+const { connection, saved_connection } = require("../database");
 const { runInterval } = require("../utils/schedule");
+
+const createPerformancesTable = () => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS performances (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      date DATE NOT NULL,
+      sales DECIMAL(10, 2) NOT NULL,
+      bookings INT NOT NULL,
+      customers INT NOT NULL
+    )
+  `;
+  saved_connection.query(createTableQuery, (error) => {
+    if (error) {
+      console.log("Error creating performances table:", error);
+      throw error;
+    }
+    console.log("Performances table created or already exists");
+  });
+};
 
 const updatePerformance = async () => {
   try {
+    createPerformancesTable(); // Ensure the performances table exists
+
     const currentDate = new Date();
     const currentMonth = currentDate.getMonth() + 1; // Get current month (1-12)
     const currentYear = currentDate.getFullYear(); // Get current year
@@ -35,30 +56,40 @@ const updatePerformance = async () => {
       if (results.length === 0) {
         console.log("No performance data");
       } else {
-        console.log("Performance data:", results.length);
+        console.log("Performance data:", results.length, " at (timestamp):", new Date());
       }
 
       for (const result of results) {
-        const { date, sales, booking, customers } = result;
+        const { date, sales, bookings, customers } = result;
 
-        let existingPerformance = await Performance.findOne({ date });
+        const existingPerformanceQuery = `
+          SELECT * FROM performances WHERE date = '${date}'
+        `;
 
-        if (existingPerformance) {
-          existingPerformance.sales = sales;
-          existingPerformance.booking = booking;
-          existingPerformance.customers = customers;
+        saved_connection.query(existingPerformanceQuery, async (error, existingPerformance) => {
+          if (error) throw error;
 
-          await existingPerformance.save();
-        } else {
-          let newPerformance = new Performance({
-            date,
-            Sales: sales,
-            Booking: booking,
-            Customers: customers,
-          });
+          if (existingPerformance.length > 0) {
+            const updateQuery = `
+              UPDATE performances
+              SET sales = ${sales}, bookings = ${bookings}, customers = ${customers}
+              WHERE date = '${date}'
+            `;
 
-          await newPerformance.save();
-        }
+            saved_connection.query(updateQuery, async (error) => {
+              if (error) throw error;
+            });
+          } else {
+            const insertQuery = `
+              INSERT INTO performances (date, sales, bookings, customers)
+              VALUES ('${date}', ${sales}, ${bookings}, ${customers})
+            `;
+
+            saved_connection.query(insertQuery, async (error) => {
+              if (error) throw error;
+            });
+          }
+        });
       }
     });
   } catch (error) {
@@ -68,8 +99,17 @@ const updatePerformance = async () => {
 
 const getAllPerformances = async (req, res) => {
   try {
-    const performances = await Performance.find();
-    res.json(performances);
+    createPerformancesTable(); // Ensure the performances table exists
+
+    const query = "SELECT * FROM performances";
+    saved_connection.query(query, (error, results) => {
+      if (error) {
+        console.log("Error retrieving performances:", error);
+        res.status(500).json({ error: "Failed to retrieve performances" });
+      } else {
+        res.json(results);
+      }
+    });
   } catch (error) {
     console.log("Error retrieving performances:", error);
     res.status(500).json({ error: "Failed to retrieve performances" });
@@ -78,10 +118,17 @@ const getAllPerformances = async (req, res) => {
 
 const getLatestPerformance = async (req, res) => {
   try {
-    const latestPerformance = await Performance.findOne()
-      .sort({ date: -1 })
-      .limit(1);
-    res.json(latestPerformance);
+    createPerformancesTable(); // Ensure the performances table exists
+
+    const query = "SELECT * FROM performances ORDER BY date DESC LIMIT 1";
+    saved_connection.query(query, (error, results) => {
+      if (error) {
+        console.log("Error retrieving latest performance:", error);
+        res.status(500).json({ error: "Failed to retrieve latest performance" });
+      } else {
+        res.json(results[0]);
+      }
+    });
   } catch (error) {
     console.log("Error retrieving latest performance:", error);
     res.status(500).json({ error: "Failed to retrieve latest performance" });
