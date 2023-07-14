@@ -1,6 +1,6 @@
 // controllers/performance.js
+const cron = require("node-cron");
 const { connection, saved_connection } = require("../database");
-const { runInterval } = require("../utils/schedule");
 
 const createPerformancesTable = () => {
   const createTableQuery = `
@@ -135,10 +135,16 @@ const getLatestPerformance = async (req, res) => {
   }
 };
 
-runInterval(updatePerformance, process.env.PERFORMANCE_INTERVAL);
+// Schedule updatePerformance to run once every day at a specific time (1:00 AM)
+cron.schedule("0 1 * * *", async () => {
+  try {
+    await updatePerformance();
+  } catch (error) {
+    console.log("Error updating KPI:", error);
+  }
+});
 
 module.exports = {
-  updatePerformance,
   getAllPerformances,
   getLatestPerformance,
 };
