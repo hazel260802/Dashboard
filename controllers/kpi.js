@@ -77,15 +77,6 @@ const getDeltaType = (totalBookings) => {
   }
 };
 
-// Schedule updateKpi to run once every day at a specific time (1:00 AM)
-cron.schedule("0 1 * * *", async () => {
-  try {
-    await updateKpi();
-  } catch (error) {
-    console.log("Error updating KPI:", error);
-  }
-});
-
 const getKpis = async (req, res) => {
   try {
     createKpisTable(); // Ensure the kpis table exists
@@ -123,5 +114,14 @@ const getLatestKpi = async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve latest KPI" });
   }
 };
+
+// Schedule updateKpi to run once every day at a specific time (1:00 AM)
+cron.schedule("0 1 * * *", async () => {
+  try {
+    await updateKpi();
+  } catch (error) {
+    console.log("Error updating KPI:", error);
+  }
+});
 
 module.exports = { getKpis, getLatestKpi };
