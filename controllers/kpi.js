@@ -1,6 +1,7 @@
 // controllers/kpi.js
+const cron = require("node-cron");
 const { connection, saved_connection } = require("../database");
-const { runInterval } = require("../utils/schedule");
+
 
 const createKpisTable = () => {
   const createTableQuery = `
@@ -76,17 +77,7 @@ const getDeltaType = (totalBookings) => {
   }
 };
 
-const runUpdateKpi = async () => {
-  try {
-    await updateKpi();
-  } catch (error) {
-    console.log("Error updating KPI:", error);
-  }
-};
-
-runInterval(runUpdateKpi, process.env.KPI_INTERVAL);
-
-const getKpis = async (res) => {
+const getKpis = async (req, res) => {
   try {
     createKpisTable(); // Ensure the kpis table exists
 
@@ -124,4 +115,13 @@ const getLatestKpi = async (req, res) => {
   }
 };
 
-module.exports = { updateKpi, getKpis, getLatestKpi };
+// Schedule updateKpi to run once every day at a specific time (1:00 AM)
+cron.schedule("0 1 * * *", async () => {
+  try {
+    await updateKpi();
+  } catch (error) {
+    console.log("Error updating KPI:", error);
+  }
+});
+
+module.exports = { getKpis, getLatestKpi };

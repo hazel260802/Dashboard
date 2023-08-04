@@ -1,6 +1,6 @@
 // controllers/rating.js
 const { connection, saved_connection } = require("../database");
-const { runInterval } = require("../utils/schedule");
+const cron = require("node-cron");
 
 const createRatingsTable = () => {
   const createTableQuery = `
@@ -128,7 +128,14 @@ const getAllRatings = async (req, res) => {
   }
 };
 
-runInterval(updateRatings, process.env.RATING_INTERVAL);
+// Schedule updateRatings to run once every day at a specific time (1:00 AM)
+cron.schedule("0 1 * * *", async () => {
+  try {
+    await updateRatings();
+  } catch (error) {
+    console.log("Error updating KPI:", error);
+  }
+});
 
 module.exports = {
   updateRatings,

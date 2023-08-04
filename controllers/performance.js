@@ -1,6 +1,6 @@
 // controllers/performance.js
+const cron = require("node-cron");
 const { connection, saved_connection } = require("../database");
-const { runInterval } = require("../utils/schedule");
 
 const createPerformancesTable = () => {
   const createTableQuery = `
@@ -41,13 +41,13 @@ const updatePerformance = async () => {
       .slice(0, 19)
       .replace("T", " ");
 
-    const query = `SELECT DATE_FORMAT(book_date, '%Y-%m-%d') 
+    const query = `SELECT DATE_FORMAT(create_at, '%Y-%m-%d') 
                   AS date, SUM(total) AS sales, 
                   COUNT(*) AS bookings, 
                   COUNT(DISTINCT customer_id) AS customers 
                   FROM bookings 
-                  WHERE status = 'completed' AND book_date >= '${formattedStartDate}' 
-                  AND book_date <= '${formattedEndDate}' 
+                  WHERE status = 'completed' AND create_at >= '${formattedStartDate}' 
+                  AND create_at <= '${formattedEndDate}' 
                   GROUP BY date`;
 
     connection.query(query, async (error, results) => {
@@ -135,10 +135,16 @@ const getLatestPerformance = async (req, res) => {
   }
 };
 
-runInterval(updatePerformance, process.env.PERFORMANCE_INTERVAL);
+// Schedule updatePerformance to run once every day at a specific time (1:00 AM)
+cron.schedule("0 1 * * *", async () => {
+  try {
+    await updatePerformance();
+  } catch (error) {
+    console.log("Error updating KPI:", error);
+  }
+});
 
 module.exports = {
-  updatePerformance,
   getAllPerformances,
   getLatestPerformance,
 };
