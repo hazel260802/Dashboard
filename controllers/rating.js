@@ -27,16 +27,8 @@ const updateRatings = async () => {
   try {
     createRatingsTable(); // Ensure the ratings table exists
 
-    const oneDayAgo = new Date(Date.now() - process.env.RATING_INTERVAL);
-
-    // Format the timestamp for the MySQL query
-    const formattedTimestamp = oneDayAgo
-      .toISOString()
-      .slice(0, 19)
-      .replace("T", " ");
-
     // Query to retrieve newly added comments and their ratings
-    const query = `SELECT hotel_id, rate, COUNT(*) AS count FROM comments WHERE created_at > '${formattedTimestamp}' GROUP BY hotel_id, rate`;
+    const query = `SELECT hotel_id, rate, COUNT(*) AS count FROM comments GROUP BY hotel_id, rate`;
 
     connection.query(query, async (error, results) => {
       if (error) throw error;
@@ -63,23 +55,23 @@ const updateRatings = async () => {
               const updateQuery = `
               UPDATE ratings
               SET wonderful = CASE
-                WHEN ${rate} >= 4.5 THEN wonderful + ${count}
+                WHEN ${rate} >= 4 THEN wonderful + ${count}
                 ELSE wonderful
               END,
               good = CASE
-                WHEN ${rate} >= 3.5 AND ${rate} < 4.5 THEN good + ${count}
+                WHEN ${rate} >= 3 AND ${rate} < 4 THEN good + ${count}
                 ELSE good
               END,
               average = CASE
-                WHEN ${rate} >= 2.5 AND ${rate} < 3.5 THEN average + ${count}
+                WHEN ${rate} >= 2 AND ${rate} < 3 THEN average + ${count}
                 ELSE average
               END,
               poor = CASE
-                WHEN ${rate} >= 1.5 AND ${rate} < 2.5 THEN poor + ${count}
+                WHEN ${rate} >= 1 AND ${rate} < 2 THEN poor + ${count}
                 ELSE poor
               END,
               terrible = CASE
-                WHEN ${rate} < 1.5 THEN terrible + ${count}
+                WHEN ${rate} < 1 THEN terrible + ${count}
                 ELSE terrible
               END
               WHERE hotel_id = ${hotel_id}
@@ -91,11 +83,11 @@ const updateRatings = async () => {
             } else {
               const insertQuery = `
               INSERT INTO ratings (hotel_id, wonderful, good, average, poor, terrible)
-              VALUES (${hotel_id}, ${rate >= 4.5 ? count : 0}, ${
-                rate >= 3.5 && rate < 4.5 ? count : 0
-              }, ${rate >= 2.5 && rate < 3.5 ? count : 0}, ${
-                rate >= 1.5 && rate < 2.5 ? count : 0
-              }, ${rate < 1.5 ? count : 0})
+              VALUES (${hotel_id}, ${rate >= 4 ? count : 0}, ${
+                rate >= 3 && rate < 4 ? count : 0
+              }, ${rate >= 2 && rate < 3 ? count : 0}, ${
+                rate >= 1 && rate < 2 ? count : 0
+              }, ${rate < 1 ? count : 0})
             `;
 
               saved_connection.query(insertQuery, async (error) => {
@@ -127,7 +119,28 @@ const getAllRatings = async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve ratings" });
   }
 };
-
+const getRatingByHotelId = async (req, res) => {
+  const hotelId = req.query.hotelId;
+  console.log(hotelId)
+  try {
+    const query = `SELECT * FROM ratings WHERE hotel_id = ${hotelId}`;
+    saved_connection.query(query, (error, result) => {
+      if (error) {
+        console.log(`Error retrieving rating for hotel with id ${hotelId}:`, error);
+        res.status(500).json({ error: "Failed to retrieve rating" });
+      } else {
+        if (result.length === 0) {
+          res.status(404).json({ error: "Rating not found for the specified hotelId" });
+        } else {
+          res.json(result[0]); // Assuming there's only one rating for a specific hotelId
+        }
+      }
+    });
+  } catch (error) {
+    console.log("Error retrieving rating:", error);
+    res.status(500).json({ error: "Failed to retrieve rating" });
+  }
+};
 // Schedule updateRatings to run once every day at a specific time (1:00 AM)
 cron.schedule("0 1 * * *", async () => {
   try {
@@ -140,4 +153,5 @@ cron.schedule("0 1 * * *", async () => {
 module.exports = {
   updateRatings,
   getAllRatings,
+  getRatingByHotelId
 };

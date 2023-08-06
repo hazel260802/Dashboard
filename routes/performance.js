@@ -3,10 +3,8 @@ const express = require("express");
 const router = express.Router();
 const performanceController = require("../controllers/performance");
 
-// Define the getAllPerformances route
+// Define the Performances route
 router.get("/", performanceController.getAllPerformances);
-
-// Define the getLatestPerformance route
 router.get("/latest", performanceController.getLatestPerformance);
-
+router.get("/date/:startDate/:endDate", performanceController.getDatePerformances)
 module.exports = router;
