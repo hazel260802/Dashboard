@@ -1,5 +1,5 @@
 // controllers/performance.js
-const { saved_connection } = require("../database");
+const { connection } = require("../database");
 const {
   fetchKPIsFromDatabase,
 } = require("../utils/fetchDatabase");
@@ -8,7 +8,7 @@ const getAllPerformances = async (req, res) => {
   try {
     const query = `
       SELECT date,
-        SUM(CASE WHEN title = 'Sales' THEN totalNumber ELSE 0 END) as Sales,
+        SUM(CASE WHEN title = 'Cancelled' THEN totalNumber ELSE 0 END) as Cancelled,
         SUM(CASE WHEN title = 'Booking' THEN totalNumber ELSE 0 END) as Booking,
         SUM(CASE WHEN title = 'Customer' THEN totalNumber ELSE 0 END) as Customers
       FROM kpis
@@ -30,7 +30,7 @@ const getDatePerformances = async (req, res) => {
 
     const query = `
       SELECT date,
-        SUM(CASE WHEN title = 'Sales' THEN totalNumber ELSE 0 END) as Sales,
+        SUM(CASE WHEN title = 'Cancelled' THEN totalNumber ELSE 0 END) as Cancelled,
         SUM(CASE WHEN title = 'Booking' THEN totalNumber ELSE 0 END) as Booking,
         SUM(CASE WHEN title = 'Customer' THEN totalNumber ELSE 0 END) as Customers
       FROM kpis
@@ -47,21 +47,21 @@ const getDatePerformances = async (req, res) => {
 
 const getLatestPerformance = async (req, res) => {
   try {
-    const { hotelId } = req.params;
+    const { hotel_id } = req.query;
 
     const query = `
       SELECT date,
-        SUM(CASE WHEN title = 'Sales' THEN totalNumber ELSE 0 END) as Sales,
+        SUM(CASE WHEN title = 'Cancelled' THEN totalNumber ELSE 0 END) as Cancelled,
         SUM(CASE WHEN title = 'Booking' THEN totalNumber ELSE 0 END) as Booking,
         SUM(CASE WHEN title = 'Customer' THEN totalNumber ELSE 0 END) as Customers
       FROM kpis
-      WHERE hotel_id = ${hotelId}
+      WHERE hotel_id = ${hotel_id}
       GROUP BY date
       ORDER BY date DESC
       LIMIT 1;
     `;
 
-    saved_connection.query(query, (error, results) => {
+    connection.query(query, (error, results) => {
       if (error) {
         console.log("Error retrieving the latest performance:", error);
         res.status(500).json({ error: "Failed to retrieve the latest performance" });
@@ -69,7 +69,7 @@ const getLatestPerformance = async (req, res) => {
         if (results.length > 0) {
           res.status(200).json(results[0]);
         } else {
-          res.status(404).json({ message: "Performance data not found for the given hotelId" });
+          res.status(404).json({ message: "Performance data not found for the given hotel_id" });
         }
       }
     });

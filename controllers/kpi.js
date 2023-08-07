@@ -1,14 +1,11 @@
 // controllers/kpi.js
 const cron = require("node-cron");
-const { saved_connection } = require("../database");
+const { connection } = require("../database");
 const {
   calculateProgress,
   calculateDelta,
   getDeltaType,
 } = require("../utils/kpiUtils");
-const {
-  fetchKPIsFromDatabase,
-} = require("../utils/fetchDatabase");
 
 const createKpisTable = () => {
   const createTableQuery = `
@@ -24,7 +21,7 @@ const createKpisTable = () => {
       date DATE NOT NULL
     )
   `;
-  saved_connection.query(createTableQuery, (error) => {
+  connection.query(createTableQuery, (error) => {
     if (error) {
       console.log("Error creating kpis table:", error);
       throw error;
@@ -60,7 +57,7 @@ const updateKpiBooking = async () => {
         for (let i = 0; i < results.length; i++) {
           const currentResult = results[i];
           const { hotel_id, totalNumber, created_at } = currentResult;
-          const deltaType = getDeltaType(totalNumber);
+
 
           let previousTotalNumber = 0;
 
@@ -74,7 +71,7 @@ const updateKpiBooking = async () => {
           LIMIT 1;
         `;
 
-          saved_connection.query(
+          connection.query(
             fetchPreviousQuery,
             async (error, previousResult) => {
               if (error) throw error;
@@ -86,10 +83,10 @@ const updateKpiBooking = async () => {
               const target = 1000000;
               const progress = calculateProgress(totalNumber, target);
               const delta = calculateDelta(totalNumber, previousTotalNumber);
-
+              const deltaType = getDeltaType(delta);
               const insertQuery = `
               INSERT INTO kpis (hotel_id, title, totalNumber, progress, target, delta, deltaType, date)
-              VALUES (${hotel_id}, 'Booking', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at}')
+              VALUES (${hotel_id}, 'Booking', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at.toISOString().slice(0, 10)}')
               ON DUPLICATE KEY UPDATE
               totalNumber = ${totalNumber},
               progress = ${progress},
@@ -98,7 +95,7 @@ const updateKpiBooking = async () => {
               deltaType = '${deltaType}';
             `;
 
-              saved_connection.query(insertQuery, async (error) => {
+              connection.query(insertQuery, async (error) => {
                 if (error) throw error;
               });
             }
@@ -134,7 +131,7 @@ const updateKpiCustomer = async () => {
         for (let i = 0; i < results.length; i++) {
           const currentResult = results[i];
           const { hotel_id, totalNumber, created_at } = currentResult;
-          const deltaType = getDeltaType(totalNumber);
+
 
           let previousTotalNumber = 0;
 
@@ -148,7 +145,7 @@ const updateKpiCustomer = async () => {
           LIMIT 1;
         `;
 
-          saved_connection.query(
+          connection.query(
             fetchPreviousQuery,
             async (error, previousResult) => {
               if (error) throw error;
@@ -160,10 +157,11 @@ const updateKpiCustomer = async () => {
               const progress = calculateProgress(totalNumber);
               const target = 500;
               const delta = calculateDelta(totalNumber, previousTotalNumber);
+              const deltaType = getDeltaType(delta);
 
               const insertQuery = `
               INSERT INTO kpis (hotel_id, title, totalNumber, progress, target, delta, deltaType, date)
-              VALUES (${hotel_id}, 'Customer', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at}')
+              VALUES (${hotel_id}, 'Customer', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at.toISOString().slice(0, 10)}')
               ON DUPLICATE KEY UPDATE
               totalNumber = ${totalNumber},
               progress = ${progress},
@@ -172,7 +170,7 @@ const updateKpiCustomer = async () => {
               deltaType = '${deltaType}';
             `;
 
-              saved_connection.query(insertQuery, async (error) => {
+              connection.query(insertQuery, async (error) => {
                 if (error) throw error;
               });
             }
@@ -212,7 +210,6 @@ const updateKpiCancelled = async () => {
         for (let i = 0; i < results.length; i++) {
           const currentResult = results[i];
           const { hotel_id, totalNumber, created_at } = currentResult;
-          const deltaType = getDeltaType(totalNumber);
 
           let previousTotalNumber = 0;
 
@@ -226,7 +223,7 @@ const updateKpiCancelled = async () => {
           LIMIT 1;
         `;
 
-          saved_connection.query(
+          connection.query(
             fetchPreviousQuery,
             async (error, previousResult) => {
               if (error) throw error;
@@ -238,10 +235,11 @@ const updateKpiCancelled = async () => {
               const target = 100;
               const progress = calculateProgress(totalNumber, target);
               const delta = calculateDelta(totalNumber, previousTotalNumber);
-
+              const deltaType = getDeltaType(delta);
+              
               const insertQuery = `
               INSERT INTO kpis (hotel_id, title, totalNumber, progress, target, delta, deltaType, date)
-              VALUES (${hotel_id}, 'Cancelled', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at}')
+              VALUES (${hotel_id}, 'Cancelled', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at.toISOString().slice(0, 10)}')
               ON DUPLICATE KEY UPDATE
               totalNumber = ${totalNumber},
               progress = ${progress},
@@ -250,7 +248,7 @@ const updateKpiCancelled = async () => {
               deltaType = '${deltaType}';
             `;
 
-              saved_connection.query(insertQuery, async (error) => {
+              connection.query(insertQuery, async (error) => {
                 if (error) throw error;
               });
             }
@@ -268,20 +266,32 @@ const updateKpiCancelled = async () => {
 
 const getKpisBooking = async (req, res) => {
   try {
-    const { hotelId, specificDate } = req.query;
+    const { hotel_id, date } = req.query;
 
-    let query =
-      "SELECT * FROM kpis WHERE title = 'Booking' ORDER BY date DESC LIMIT 30";
+    let query = "SELECT * FROM kpis WHERE title = 'Booking'";
 
-    if (hotelId) {
-      query += ` AND hotel_id = ${hotelId}`;
+    if (hotel_id) {
+      query += ` AND hotel_id = ${hotel_id}`;
     }
 
-    if (specificDate) {
-      query += ` AND date = '${specificDate}'`;
+    if (date) {
+      query += ` AND date = '${date}'`;
     }
+    query += ` ORDER BY date DESC LIMIT 30;`;
 
-    fetchKPIsFromDatabase(query, res);
+    try {
+      connection.query(query, (error, results) => {
+        if (error) {
+          console.log("Error retrieving KPIs:", error);
+          res.status(500).json({ error: "Failed to retrieve data" });
+        } else {
+            res.status(200).json(results);
+        }
+      });
+    } catch (error) {
+      console.log("Error retrieving KPIs:", error);
+      res.status(500).json({ error: "Failed to retrieve data" });
+    }
   } catch (error) {
     console.log("Error retrieving KPIs for booking:", error);
     res.status(500).json({ error: "Failed to retrieve KPIs for booking" });
@@ -290,20 +300,31 @@ const getKpisBooking = async (req, res) => {
 
 const getKpisCustomer = async (req, res) => {
   try {
-    const { hotelId, specificDate } = req.query;
+    const { hotel_id, date } = req.query;
 
-    let query =
-      "SELECT * FROM kpis WHERE title = 'Customer' ORDER BY date DESC LIMIT 30";
+    let query = "SELECT * FROM kpis WHERE title = 'Customer'";
 
-    if (hotelId) {
-      query += ` AND hotel_id = ${hotelId}`;
+    if (hotel_id) {
+      query += ` AND hotel_id = ${hotel_id}`;
     }
 
-    if (specificDate) {
-      query += ` AND date = '${specificDate}'`;
+    if (date) {
+      query += ` AND date = '${date}'`;
     }
-
-    fetchKPIsFromDatabase(query, res);
+    query += ` ORDER BY date DESC LIMIT 30;`;
+    try {
+      connection.query(query, (error, results) => {
+        if (error) {
+          console.log("Error retrieving KPIs:", error);
+          res.status(500).json({ error: "Failed to retrieve data" });
+        } else {
+            res.status(200).json(results);
+        }
+      });
+    } catch (error) {
+      console.log("Error retrieving KPIs:", error);
+      res.status(500).json({ error: "Failed to retrieve data" });
+    }
   } catch (error) {
     console.log("Error retrieving KPIs for customer:", error);
     res.status(500).json({ error: "Failed to retrieve KPIs for customer" });
@@ -312,20 +333,31 @@ const getKpisCustomer = async (req, res) => {
 
 const getKpisCancelled = async (req, res) => {
   try {
-    const { hotelId, specificDate } = req.query;
+    const { hotel_id, date } = req.query;
+    console.log(hotel_id, date);
+    let query = "SELECT * FROM kpis WHERE title = 'Cancelled'";
 
-    let query =
-      "SELECT * FROM kpis WHERE title = 'Cancelled' ORDER BY date DESC LIMIT 30";
-
-    if (hotelId) {
-      query += ` AND hotel_id = ${hotelId}`;
+    if (hotel_id) {
+      query += ` AND hotel_id = ${hotel_id}`;
     }
 
-    if (specificDate) {
-      query += ` AND date = '${specificDate}'`;
+    if (date) {
+      query += ` AND date = '${date}'`;
     }
-
-    fetchKPIsFromDatabase(query, res);
+    query += ` ORDER BY date DESC LIMIT 30;`;
+    try {
+      connection.query(query, (error, results) => {
+        if (error) {
+          console.log("Error retrieving KPIs:", error);
+          res.status(500).json({ error: "Failed to retrieve data" });
+        } else {
+            res.status(200).json(results);
+        }
+      });
+    } catch (error) {
+      console.log("Error retrieving KPIs:", error);
+      res.status(500).json({ error: "Failed to retrieve data" });
+    }
   } catch (error) {
     console.log("Error retrieving KPIs for cancelled:", error);
     res.status(500).json({ error: "Failed to retrieve KPIs for cancelled" });
@@ -333,7 +365,7 @@ const getKpisCancelled = async (req, res) => {
 };
 
 // Schedule updateKpi to run once every day at a specific time (1:00 AM)
-cron.schedule("0 1 * * *", async () => {
+cron.schedule("* * * * *", async () => {
   try {
     // Update the KPI data for each category.
     await updateKpiBooking();

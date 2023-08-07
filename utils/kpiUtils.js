@@ -1,26 +1,29 @@
 // kpiUtils.js
 
 const calculateProgress = (totalNumber, target) => {
+  if (totalNumber === 0 || isNaN(totalNumber) || isNaN(target)) {
+    return 0; // or any other default value that makes sense for your use case
+  }
   const progress = (totalNumber / target) * 100;
   return progress.toFixed(2); // Round to 2 decimal places
 };
 
 const calculateDelta = (currentTotal, previousTotal) => {
-  if (previousTotal === 0) return NaN;
+  if (isNaN(previousTotal)|| previousTotal === 0) return 0;
   const deltaPercentage =
     ((currentTotal - previousTotal) / previousTotal) * 100;
   return parseFloat(deltaPercentage.toFixed(2));
 };
 
-const getDeltaType = (totalBookings) => {
+const getDeltaType = (deltaPercentage) => {
   // Determine the delta type based on the percentage
-  if (totalBookings >= 100) {
+  if (deltaPercentage > 50) {
     return "increase";
-  } else if (totalBookings >= 50) {
+  } else if (deltaPercentage > 0) {
     return "moderateIncrease";
-  } else if (totalBookings >= 25) {
+  } else if (deltaPercentage == 0) {
     return "stabilize";
-  } else if (totalBookings >= 10) {
+  } else if (deltaPercentage < 0 && deltaPercentage > -50) {
     return "moderateDecrease";
   } else {
     return "decrease";

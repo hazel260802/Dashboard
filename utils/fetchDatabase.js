@@ -1,7 +1,7 @@
-const { saved_connection } = require("../database");
+const { connection } = require("../database");
 const fetchKPIsFromDatabase = async (query, res) => {
     try {
-      saved_connection.query(query, (error, results) => {
+      connection.query(query, (error, results) => {
         if (error) {
           console.log("Error retrieving KPIs:", error);
           res.status(500).json({ error: "Failed to retrieve data" });
