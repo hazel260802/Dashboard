@@ -1,5 +1,5 @@
 // controllers/rating.js
-const { connection, saved_connection } = require("../database");
+const { connection } = require("../database");
 const cron = require("node-cron");
 
 const createRatingsTable = () => {
@@ -14,7 +14,7 @@ const createRatingsTable = () => {
     terrible INT NOT NULL DEFAULT 0
   )
 `;
-  saved_connection.query(createTableQuery, (error) => {
+  connection.query(createTableQuery, (error) => {
     if (error) {
       console.log("Error creating ratings table:", error);
       throw error;
@@ -36,7 +36,12 @@ const updateRatings = async () => {
         console.log("No new rating");
       } else {
         // Log the current timestamp of new ratings
-        console.log("New ratings: ", results.length, " at (timestamp):", new Date());
+        console.log(
+          "New ratings: ",
+          results.length,
+          " at (timestamp):",
+          new Date()
+        );
       }
 
       for (const result of results) {
@@ -46,7 +51,7 @@ const updateRatings = async () => {
           SELECT * FROM ratings WHERE hotel_id = ${hotel_id}
         `;
 
-        saved_connection.query(
+        connection.query(
           existingRatingsQuery,
           async (error, existingRatings) => {
             if (error) throw error;
@@ -77,7 +82,7 @@ const updateRatings = async () => {
               WHERE hotel_id = ${hotel_id}
             `;
 
-              saved_connection.query(updateQuery, async (error) => {
+              connection.query(updateQuery, async (error) => {
                 if (error) throw error;
               });
             } else {
@@ -90,7 +95,7 @@ const updateRatings = async () => {
               }, ${rate < 1 ? count : 0})
             `;
 
-              saved_connection.query(insertQuery, async (error) => {
+              connection.query(insertQuery, async (error) => {
                 if (error) throw error;
               });
             }
@@ -106,7 +111,7 @@ const updateRatings = async () => {
 const getAllRatings = async (req, res) => {
   try {
     const query = "SELECT * FROM ratings";
-    saved_connection.query(query, (error, results) => {
+    connection.query(query, (error, results) => {
       if (error) {
         console.log("Error retrieving ratings:", error);
         res.status(500).json({ error: "Failed to retrieve ratings" });
@@ -120,19 +125,23 @@ const getAllRatings = async (req, res) => {
   }
 };
 const getRatingByHotelId = async (req, res) => {
-  const hotelId = req.query.hotelId;
-  console.log(hotelId)
+  const { hotel_id } = req.query;
   try {
-    const query = `SELECT * FROM ratings WHERE hotel_id = ${hotelId}`;
-    saved_connection.query(query, (error, result) => {
+    const query = `SELECT * FROM ratings WHERE hotel_id = ${hotel_id}`;
+    connection.query(query, (error, result) => {
       if (error) {
-        console.log(`Error retrieving rating for hotel with id ${hotelId}:`, error);
+        console.log(
+          `Error retrieving rating for hotel with id ${hotel_id}:`,
+          error
+        );
         res.status(500).json({ error: "Failed to retrieve rating" });
       } else {
         if (result.length === 0) {
-          res.status(404).json({ error: "Rating not found for the specified hotelId" });
+          res
+            .status(404)
+            .json({ error: "Rating not found for the specified hotel_id" });
         } else {
-          res.json(result[0]); // Assuming there's only one rating for a specific hotelId
+          res.json(result[0]); // Assuming there's only one rating for a specific hotel_id
         }
       }
     });
@@ -142,7 +151,7 @@ const getRatingByHotelId = async (req, res) => {
   }
 };
 // Schedule updateRatings to run once every day at a specific time (1:00 AM)
-cron.schedule("0 1 * * *", async () => {
+cron.schedule("* * * * *", async () => {
   try {
     await updateRatings();
   } catch (error) {
@@ -153,5 +162,5 @@ cron.schedule("0 1 * * *", async () => {
 module.exports = {
   updateRatings,
   getAllRatings,
-  getRatingByHotelId
+  getRatingByHotelId,
 };
