@@ -150,7 +150,7 @@ const getRatingByHotelId = async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve rating" });
   }
 };
-// Schedule updateRatings to run once every day at a specific time (1:00 AM)
+// Schedule updateRatings to run once every minute
 cron.schedule("* * * * *", async () => {
   try {
     await updateRatings();
