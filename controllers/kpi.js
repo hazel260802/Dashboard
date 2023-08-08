@@ -365,7 +365,7 @@ const getKpisCancelled = async (req, res) => {
 };
 
 // Schedule updateKpi to run once every day at a specific time (1:00 AM)
-cron.schedule("* * * * *", async () => {
+cron.schedule("1 0 * * *", async () => {
   try {
     // Update the KPI data for each category.
     await updateKpiBooking();
