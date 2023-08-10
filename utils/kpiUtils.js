@@ -22,7 +22,7 @@ const getDeltaType = (deltaPercentage) => {
   } else if (deltaPercentage > 0) {
     return "moderateIncrease";
   } else if (deltaPercentage == 0) {
-    return "stabilize";
+    return "unchanged";
   } else if (deltaPercentage < 0 && deltaPercentage > -50) {
     return "moderateDecrease";
   } else {
