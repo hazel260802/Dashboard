@@ -1,8 +1,6 @@
 // controllers/performance.js
 const { connection } = require("../database");
-const {
-  fetchKPIsFromDatabase,
-} = require("../utils/fetchDatabase");
+const { fetchKPIsFromDatabase } = require("../utils/fetchDatabase");
 
 const getAllPerformances = async (req, res) => {
   try {
@@ -12,7 +10,7 @@ const getAllPerformances = async (req, res) => {
         SUM(CASE WHEN title = 'Booking' THEN totalNumber ELSE 0 END) as Booking,
         SUM(CASE WHEN title = 'Customer' THEN totalNumber ELSE 0 END) as Customers
       FROM kpis
-      GROUP BY date
+      GROUP BY date, hotel_id
       ORDER BY date DESC
       LIMIT 30;
     `;
@@ -64,18 +62,30 @@ const getLatestPerformance = async (req, res) => {
     connection.query(query, (error, results) => {
       if (error) {
         console.log("Error retrieving the latest performance:", error);
-        res.status(500).json({ error: "Failed to retrieve the latest performance" });
+        res
+          .status(500)
+          .json({ error: "Failed to retrieve the latest performance" });
       } else {
         if (results.length > 0) {
-          res.status(200).json(results[0]);
+          const formattedResults = results.map((result) => ({
+            ...result,
+            date: result.date.toISOString().split("T")[0],
+          }));
+          res.status(200).json(formattedResults[0]);
         } else {
-          res.status(404).json({ message: "Performance data not found for the given hotel_id" });
+          res
+            .status(404)
+            .json({
+              message: "Performance data not found for the given hotel_id",
+            });
         }
       }
     });
   } catch (error) {
     console.log("Error:", error);
-    res.status(500).json({ error: "Failed to retrieve the latest performance" });
+    res
+      .status(500)
+      .json({ error: "Failed to retrieve the latest performance" });
   }
 };
 

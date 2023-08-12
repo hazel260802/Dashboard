@@ -58,7 +58,6 @@ const updateKpiBooking = async () => {
           const currentResult = results[i];
           const { hotel_id, totalNumber, created_at } = currentResult;
 
-
           let previousTotalNumber = 0;
 
           // Fetch previousTotalNumber from the kpis table if it exists
@@ -80,13 +79,15 @@ const updateKpiBooking = async () => {
                 previousTotalNumber = previousResult[0].totalNumber;
               }
 
-              const target = 1000000;
+              const target = 10000;
               const progress = calculateProgress(totalNumber, target);
               const delta = calculateDelta(totalNumber, previousTotalNumber);
               const deltaType = getDeltaType(delta);
               const insertQuery = `
               INSERT INTO kpis (hotel_id, title, totalNumber, progress, target, delta, deltaType, date)
-              VALUES (${hotel_id}, 'Booking', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at.toISOString().slice(0, 10)}')
+              VALUES (${hotel_id}, 'Booking', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at
+                .toISOString()
+                .slice(0, 10)}')
               ON DUPLICATE KEY UPDATE
               totalNumber = ${totalNumber},
               progress = ${progress},
@@ -132,7 +133,6 @@ const updateKpiCustomer = async () => {
           const currentResult = results[i];
           const { hotel_id, totalNumber, created_at } = currentResult;
 
-
           let previousTotalNumber = 0;
 
           // Fetch previousTotalNumber from the kpis table if it exists
@@ -155,13 +155,15 @@ const updateKpiCustomer = async () => {
               }
 
               const progress = calculateProgress(totalNumber);
-              const target = 500;
+              const target = 100;
               const delta = calculateDelta(totalNumber, previousTotalNumber);
               const deltaType = getDeltaType(delta);
 
               const insertQuery = `
               INSERT INTO kpis (hotel_id, title, totalNumber, progress, target, delta, deltaType, date)
-              VALUES (${hotel_id}, 'Customer', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at.toISOString().slice(0, 10)}')
+              VALUES (${hotel_id}, 'Customer', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at
+                .toISOString()
+                .slice(0, 10)}')
               ON DUPLICATE KEY UPDATE
               totalNumber = ${totalNumber},
               progress = ${progress},
@@ -236,10 +238,12 @@ const updateKpiCancelled = async () => {
               const progress = calculateProgress(totalNumber, target);
               const delta = calculateDelta(totalNumber, previousTotalNumber);
               const deltaType = getDeltaType(delta);
-              
+
               const insertQuery = `
               INSERT INTO kpis (hotel_id, title, totalNumber, progress, target, delta, deltaType, date)
-              VALUES (${hotel_id}, 'Cancelled', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at.toISOString().slice(0, 10)}')
+              VALUES (${hotel_id}, 'Cancelled', ${totalNumber}, ${progress}, ${target}, ${delta}, '${deltaType}', '${created_at
+                .toISOString()
+                .slice(0, 10)}')
               ON DUPLICATE KEY UPDATE
               totalNumber = ${totalNumber},
               progress = ${progress},
@@ -285,7 +289,11 @@ const getKpisBooking = async (req, res) => {
           console.log("Error retrieving KPIs:", error);
           res.status(500).json({ error: "Failed to retrieve data" });
         } else {
-            res.status(200).json(results);
+          const formattedResults = results.map((result) => ({
+            ...result,
+            date: result.date.toISOString().split("T")[0],
+          }));
+          res.status(200).json(formattedResults);
         }
       });
     } catch (error) {
@@ -318,7 +326,11 @@ const getKpisCustomer = async (req, res) => {
           console.log("Error retrieving KPIs:", error);
           res.status(500).json({ error: "Failed to retrieve data" });
         } else {
-            res.status(200).json(results);
+          const formattedResults = results.map((result) => ({
+            ...result,
+            date: result.date.toISOString().split("T")[0],
+          }));
+          res.status(200).json(formattedResults);
         }
       });
     } catch (error) {
@@ -351,7 +363,11 @@ const getKpisCancelled = async (req, res) => {
           console.log("Error retrieving KPIs:", error);
           res.status(500).json({ error: "Failed to retrieve data" });
         } else {
-            res.status(200).json(results);
+          const formattedResults = results.map((result) => ({
+            ...result,
+            date: result.date.toISOString().split("T")[0],
+          }));
+          res.status(200).json(formattedResults);
         }
       });
     } catch (error) {
@@ -365,7 +381,7 @@ const getKpisCancelled = async (req, res) => {
 };
 
 // Schedule updateKpi to run once every day at a specific time (1:00 AM)
-cron.schedule("0 */8 * * *", async () => {
+cron.schedule("0 1 * * *", async () => {
   try {
     // Update the KPI data for each category.
     await updateKpiBooking();
