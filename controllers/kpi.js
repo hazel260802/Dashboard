@@ -380,17 +380,24 @@ const getKpisCancelled = async (req, res) => {
   }
 };
 
-// Schedule updateKpi to run every day at 1:30 PM in the Vietnam timezone
-cron.schedule('30 13 * * *', { timezone: 'Asia/Ho_Chi_Minh' }, async () => {
+const updateKpi = async () => {
   try {
-    // Update the KPI data for each category.
     await updateKpiBooking();
     await updateKpiCustomer();
     await updateKpiCancelled();
   } catch (error) {
     console.log("Error updating KPI:", error);
   }
-});
+};
+
+// Schedule updateKpi to run every day at 1:30 PM in the Vietnam timezone
+cron.schedule('30 13 * * *', async () => {
+  try {
+    await updateKpi();
+  } catch (error) {
+    console.log("Error in scheduled task:", error);
+  }
+}, { timezone: 'Asia/Ho_Chi_Minh' });
 
 
 module.exports = {
