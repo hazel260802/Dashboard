@@ -390,18 +390,10 @@ const updateKpi = async () => {
   }
 };
 
-// Schedule updateKpi to run every day at 1:30 PM in the Vietnam timezone
-cron.schedule('30 13 * * *', async () => {
-  try {
-    await updateKpi();
-  } catch (error) {
-    console.log("Error in scheduled task:", error);
-  }
-}, { timezone: 'Asia/Ho_Chi_Minh' });
-
 
 module.exports = {
   getKpisBooking,
   getKpisCustomer,
   getKpisCancelled,
+  updateKpi
 };

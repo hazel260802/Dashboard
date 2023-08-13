@@ -5,14 +5,14 @@ const { fetchKPIsFromDatabase } = require("../utils/fetchDatabase");
 const getAllPerformances = async (req, res) => {
   try {
     const query = `
-      SELECT date,
-        SUM(CASE WHEN title = 'Cancelled' THEN totalNumber ELSE 0 END) as Cancelled,
-        SUM(CASE WHEN title = 'Booking' THEN totalNumber ELSE 0 END) as Booking,
-        SUM(CASE WHEN title = 'Customer' THEN totalNumber ELSE 0 END) as Customers
-      FROM kpis
-      GROUP BY date, hotel_id
-      ORDER BY date DESC
-      LIMIT 30;
+    SELECT date,
+    MAX(CASE WHEN title = 'Cancelled' THEN totalNumber ELSE 0 END) as Cancelled,
+    MAX(CASE WHEN title = 'Booking' THEN totalNumber ELSE 0 END) as Booking,
+    MAX(CASE WHEN title = 'Customer' THEN totalNumber ELSE 0 END) as Customers
+  FROM kpis
+  GROUP BY date
+  ORDER BY date DESC
+  LIMIT 30;
     `;
 
     fetchKPIsFromDatabase(query, res);
@@ -73,11 +73,9 @@ const getLatestPerformance = async (req, res) => {
           }));
           res.status(200).json(formattedResults[0]);
         } else {
-          res
-            .status(404)
-            .json({
-              message: "Performance data not found for the given hotel_id",
-            });
+          res.status(404).json({
+            message: "Performance data not found for the given hotel_id",
+          });
         }
       }
     });
