@@ -6,6 +6,7 @@ const {
   calculateDelta,
   getDeltaType,
 } = require("../utils/kpiUtils");
+const schedule = require('node-schedule');
 
 const createKpisTable = () => {
   const createTableQuery = `
@@ -380,8 +381,8 @@ const getKpisCancelled = async (req, res) => {
   }
 };
 
-// Schedule updateKpi to run once every day at a specific time (1:00 AM)
-cron.schedule("0 12 * * *", async () => {
+// Schedule updateKpi to run every day at 1:30 PM in the Vietnam timezone
+schedule.scheduleJob('30 13 * * *', { tz: 'Asia/Ho_Chi_Minh' }, async () => {
   try {
     // Update the KPI data for each category.
     await updateKpiBooking();
@@ -391,6 +392,7 @@ cron.schedule("0 12 * * *", async () => {
     console.log("Error updating KPI:", error);
   }
 });
+
 
 module.exports = {
   getKpisBooking,

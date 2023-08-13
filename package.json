@@ -19,6 +19,7 @@
     "mysql": "^2.18.1",
     "mysql2": "^3.3.4",
     "node": "^14.17.3",
-    "node-cron": "^3.0.2"
+    "node-cron": "^3.0.2",
+    "node-schedule": "^2.1.1"
   }
 }
