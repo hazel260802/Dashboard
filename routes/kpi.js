@@ -9,4 +9,3 @@ router.get("/customer", kpiController.getKpisCustomer);
 router.get("/cancelled", kpiController.getKpisCancelled);
 
 module.exports = router;
-

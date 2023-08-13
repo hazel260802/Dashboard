@@ -390,10 +390,9 @@ const updateKpi = async () => {
   }
 };
 
-
 module.exports = {
   getKpisBooking,
   getKpisCustomer,
   getKpisCancelled,
-  updateKpi
+  updateKpi,
 };

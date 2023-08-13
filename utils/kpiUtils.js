@@ -9,7 +9,7 @@ const calculateProgress = (totalNumber, target) => {
 };
 
 const calculateDelta = (currentTotal, previousTotal) => {
-  if (isNaN(previousTotal)|| previousTotal === 0) return 0;
+  if (isNaN(previousTotal) || previousTotal === 0) return 0;
   const deltaPercentage =
     ((currentTotal - previousTotal) / previousTotal) * 100;
   return parseFloat(deltaPercentage.toFixed(2));
@@ -29,7 +29,6 @@ const getDeltaType = (deltaPercentage) => {
     return "decrease";
   }
 };
-
 
 module.exports = {
   calculateProgress,

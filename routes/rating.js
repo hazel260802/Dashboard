@@ -7,5 +7,4 @@ const ratingController = require("../controllers/rating");
 router.get("/hotel", ratingController.getRatingByHotelId);
 router.get("/", ratingController.getAllRatings);
 
-
 module.exports = router;

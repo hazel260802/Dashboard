@@ -10,7 +10,6 @@ const connection = mysql.createConnection({
   timezone: "utc", // Set the timezone to UTC
 });
 
-
 connection.connect((err) => {
   if (err) console.log(err);
   else console.log("MySQL connected successfully");

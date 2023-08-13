@@ -6,5 +6,5 @@ const performanceController = require("../controllers/performance");
 // Define the Performances route
 router.get("/", performanceController.getAllPerformances);
 router.get("/latest", performanceController.getLatestPerformance);
-router.get("/date", performanceController.getDatePerformances)
+router.get("/date", performanceController.getDatePerformances);
 module.exports = router;

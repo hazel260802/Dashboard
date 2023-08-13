@@ -23,13 +23,17 @@ const updateUpdateTime = (req, res) => {
 
   cronExpression = newScheduledTime; // Update the cron expression
 
-  updateKpiCronJob = cron.schedule(cronExpression, async () => {
-    try {
-      await updateKpi();
-    } catch (error) {
-      console.log("Error in scheduled task:", error);
-    }
-  }, { timezone: 'Asia/Ho_Chi_Minh', scheduled: true });
+  updateKpiCronJob = cron.schedule(
+    cronExpression,
+    async () => {
+      try {
+        await updateKpi();
+      } catch (error) {
+        console.log("Error in scheduled task:", error);
+      }
+    },
+    { timezone: "Asia/Ho_Chi_Minh", scheduled: true }
+  );
 
   updateKpiCronJob.start();
 
